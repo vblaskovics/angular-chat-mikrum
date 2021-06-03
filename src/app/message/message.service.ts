@@ -12,10 +12,9 @@ interface IMessagesOperation extends Function {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class MessageService {
-
   newMessages: Subject<Message> = new Subject<Message>();
 
   messages: Observable<Message[]>;
@@ -23,6 +22,8 @@ export class MessageService {
   updates: Subject<any> = new Subject<any>();
 
   create: Subject<Message> = new Subject<Message>();
+
+  markThreadAsRead: Subject<any> = new Subject<any>();
 
   constructor() {
     this.messages = this.updates.pipe(
@@ -33,24 +34,40 @@ export class MessageService {
       refCount()
     );
 
-    this.create.pipe(
-      map((message:Message): IMessagesOperation => {
+    this.create
+      .pipe(
+        map((message: Message): IMessagesOperation => {
+          return (messages: Message[]) => {
+            return messages.concat(message);
+          };
+        })
+      )
+      .subscribe(this.updates);
+
+    this.newMessages.subscribe(this.create);
+
+    this.markThreadAsRead.pipe(
+      map((thread: Thread)=>{
         return (messages: Message[]) => {
-          return messages.concat(message);
+          return messages.map((message: Message) => {
+            if (message.thread.id === thread.id) {
+              message.isRead = true;
+            }
+            return message;
+          })
         }
       })
     ).subscribe(this.updates);
-
-    this.newMessages.subscribe(this.create);
+    
   }
 
-  addMessage(message:Message) {
+  addMessage(message: Message) {
     this.newMessages.next(message);
   }
 
-  messagesForThreadUser(thread: Thread, user:User): Observable<Message> {
+  messagesForThreadUser(thread: Thread, user: User): Observable<Message> {
     return this.newMessages.pipe(
-      filter((message:Message)=>{
+      filter((message: Message) => {
         return message.thread.id === thread.id && message.author.id !== user.id;
       })
     );
