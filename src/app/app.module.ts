@@ -8,6 +8,7 @@ import { ChatThreadsComponent } from './chat-threads/chat-threads.component';
 import { ChatThreadComponent } from './chat-thread/chat-thread.component';
 import { ChatWindowComponent } from './chat-window/chat-window.component';
 import { ChatMessageComponent } from './chat-message/chat-message.component';
+import { FormsModule } from '@angular/forms';
 
 @NgModule({
   declarations: [
@@ -20,7 +21,8 @@ import { ChatMessageComponent } from './chat-message/chat-message.component';
     ChatMessageComponent
   ],
   imports: [
-    BrowserModule
+    BrowserModule,
+    FormsModule
   ],
   providers: [],
   bootstrap: [AppComponent]
