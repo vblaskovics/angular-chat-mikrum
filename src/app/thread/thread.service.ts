@@ -68,4 +68,8 @@ export class ThreadService {
       })
     );
   }
+
+  setCurrentThread(newThread: Thread): void {
+    this.currentThread.next(newThread);
+  }
 }
