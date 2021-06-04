@@ -1,4 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
+import { Message } from '../message/message.model';
+import { User } from '../user/user.model';
+import { UserService } from '../user/user.service';
 
 @Component({
   selector: 'app-chat-message',
@@ -6,10 +9,19 @@ import { Component, OnInit } from '@angular/core';
   styleUrls: ['./chat-message.component.css']
 })
 export class ChatMessageComponent implements OnInit {
+  @Input() message?: Message;
+  currentUser?: User;
+  incoming?: boolean;
 
-  constructor() { }
+  constructor(public userService: UserService) { }
 
   ngOnInit(): void {
+    this.userService.currentUser.subscribe((user) => {
+      this.currentUser = user;
+
+      this.incoming = this.message?.author.id !== user?.id;
+
+    })
   }
 
 }
