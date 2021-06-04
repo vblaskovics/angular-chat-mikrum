@@ -55,9 +55,13 @@ export class ThreadService {
     ]).pipe(
       map(([currentThread, messages]) => {
         if (currentThread && messages.length > 0) {
-          return messages.filter(
-            (message) => message.thread.id === currentThread.id
-          );
+          return messages
+            .filter(
+              (message) => message.thread.id === currentThread.id)
+            .map((message:Message) => {
+              message.isRead = true;
+              return message;
+            });
         } else {
           return [];
         }
