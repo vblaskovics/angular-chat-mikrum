@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, ElementRef, OnInit } from '@angular/core';
 import { Observable } from 'rxjs';
 import { Message } from '../message/message.model';
 import { MessageService } from '../message/message.service';
@@ -20,7 +20,8 @@ export class ChatWindowComponent implements OnInit {
 
   constructor(public messageService: MessageService,
       public threadService: ThreadService,
-      public userService: UserService) { 
+      public userService: UserService,
+      public el: ElementRef) { 
         this.currentThread = new Thread();
         this.currentUser = new User();
         this.draftMessage = new Message();
@@ -33,6 +34,12 @@ export class ChatWindowComponent implements OnInit {
 
         this.userService.currentUser.subscribe((user:User) => {
           this.currentUser = user;
+        })
+
+        this.messages.subscribe((message:Message) => {
+          setTimeout(() => {
+            this.scrollToBottom();
+          })
         })
       }
 
@@ -51,6 +58,13 @@ export class ChatWindowComponent implements OnInit {
     m.isRead = true;
     this.messageService.addMessage(m);
     this.draftMessage = new Message();
+  }
+
+  scrollToBottom(): void {
+    const scrollPane: any = this.el.nativeElement.querySelector(
+      '.msg-container-base'
+    );
+    scrollPane.scrollTop = scrollPane.scrollHeight;
   }
 
 }
