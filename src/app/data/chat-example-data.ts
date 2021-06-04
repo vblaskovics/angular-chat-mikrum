@@ -6,6 +6,8 @@ import { MessageService } from '../message/message.service';
 import { ThreadService } from '../thread/thread.service';
 import { UserService } from '../user/user.service';
 import * as moment from 'moment';
+import { combineLatest, withLatestFrom } from 'rxjs/operators';
+import { UnreadMessagesService } from '../message/unread-messages.service';
 
 // the person using the app us Juliet
 const me: User = new User(
@@ -28,6 +30,14 @@ const wait: User = new User(
   'Waiting Bot',
   'assets/images/avatars/male-avatar-2.png'
 );
+const ask: User = new User(
+  'Asking Bot',
+  'assets/images/avatars/male-avatar-3.png'
+);
+const order: User = new User(
+  'Order Bot',
+  'assets/images/avatars/female-avatar-3.png'
+);
 
 const tLadycap: Thread = new Thread(
   'tLadycap',
@@ -37,6 +47,8 @@ const tLadycap: Thread = new Thread(
 const tEcho: Thread = new Thread('tEcho', echo.name, echo.avatarSrc);
 const tRev: Thread = new Thread('tRev', rev.name, rev.avatarSrc);
 const tWait: Thread = new Thread('tWait', wait.name, wait.avatarSrc);
+const tAsk: Thread = new Thread('tAsk', ask.name, ask.avatarSrc);
+const tOrder: Thread = new Thread('tOrder', order.name, order.avatarSrc);
 
 const initialMessages: Array<Message> = [
   new Message({
@@ -69,13 +81,26 @@ const initialMessages: Array<Message> = [
     text: `I\'ll wait however many seconds you send to me before responding. Try sending '3'`,
     thread: tWait,
   }),
+  new Message({
+    author: ask,
+    sentAt: moment().subtract(5, 'minutes').toDate(),
+    text: `I\'ll ask why.`,
+    thread: tAsk,
+  }),
+  new Message({
+    author: order,
+    sentAt: moment().subtract(6, 'minutes').toDate(),
+    text: `I\'ll recieve orders.`,
+    thread: tOrder,
+  }),
 ];
 
 export class ChatExampleData {
   static init(
     MessageService: MessageService,
     ThreadService: ThreadService,
-    UserService: UserService
+    UserService: UserService,
+    UnreadMessagesService: UnreadMessagesService
   ): void {
     // TODO make `messages` hot
     MessageService.messages.subscribe(() => ({}));
@@ -90,10 +115,11 @@ export class ChatExampleData {
 
     ThreadService.setCurrentThread(tEcho);
 
-    this.setupBots(MessageService);
+    this.setupBots(MessageService, UnreadMessagesService);
   }
 
-  static setupBots(MessageService: MessageService): void {
+  static setupBots(MessageService: MessageService,
+    UnreadMessagesService: UnreadMessagesService): void {
     // echo bot
     MessageService
       .messagesForThreadUser(tEcho, echo)
@@ -144,5 +170,38 @@ export class ChatExampleData {
           );
         }, waitTime * 1000);
       });
+
+    // asking bot
+    MessageService
+    .messagesForThreadUser(tAsk, ask)
+    .forEach((message: Message): void => {
+      MessageService.addMessage(
+        new Message({
+          author: ask,
+          text: `Why ${message.text}?`,
+          thread: tAsk,
+        })
+      );
+    });
+
+    // order bot
+    MessageService.messagesForThreadUser(tOrder, order).pipe(
+      withLatestFrom(UnreadMessagesService.unreadMessagesCounter)
+    ).subscribe(([message, count]): void => {
+      let msgTxt:string;
+      if(message.text === 'olvasatlan'){
+        msgTxt = count;
+      } else {
+        msgTxt = 'Give me proper order!'
+      }
+      MessageService.addMessage(
+        new Message({
+          author: order,
+          text: msgTxt,
+          thread: tOrder,
+        })
+      );
+    });
+
   }
 }

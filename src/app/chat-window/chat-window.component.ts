@@ -1,5 +1,5 @@
 import { Component, ElementRef, OnInit } from '@angular/core';
-import { Observable } from 'rxjs';
+import { combineLatest, Observable } from 'rxjs';
 import { Message } from '../message/message.model';
 import { MessageService } from '../message/message.service';
 import { Thread } from '../thread/thread.model';
@@ -36,11 +36,20 @@ export class ChatWindowComponent implements OnInit {
           this.currentUser = user;
         })
 
-        this.messages.subscribe((message:Message) => {
-          setTimeout(() => {
-            this.scrollToBottom();
-          })
+        // this.messages.subscribe((message:Message) => {
+        //   setTimeout(() => {
+        //     this.scrollToBottom();
+        //   })
+        // })
+
+        this.messageService.newMessages.subscribe((message:Message) => {
+          if(message?.thread?.id === this.currentThread?.id){
+            setTimeout(() => {
+              this.scrollToBottom();
+            })
+          }
         })
+
       }
 
   ngOnInit(): void {
