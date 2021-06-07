@@ -1,5 +1,6 @@
 import { Component, ElementRef, OnInit } from '@angular/core';
 import { combineLatest, Observable } from 'rxjs';
+import { filter, tap } from 'rxjs/operators';
 import { Message } from '../message/message.model';
 import { MessageService } from '../message/message.service';
 import { Thread } from '../thread/thread.model';
@@ -10,7 +11,7 @@ import { UserService } from '../user/user.service';
 @Component({
   selector: 'app-chat-window',
   templateUrl: './chat-window.component.html',
-  styleUrls: ['./chat-window.component.css']
+  styleUrls: ['./chat-window.component.css'],
 })
 export class ChatWindowComponent implements OnInit {
   messages: Observable<any>;
@@ -18,42 +19,55 @@ export class ChatWindowComponent implements OnInit {
   currentUser: User;
   draftMessage: Message;
 
-  constructor(public messageService: MessageService,
-      public threadService: ThreadService,
-      public userService: UserService,
-      public el: ElementRef) { 
-        this.currentThread = new Thread();
-        this.currentUser = new User();
-        this.draftMessage = new Message();
+  constructor(
+    public messageService: MessageService,
+    public threadService: ThreadService,
+    public userService: UserService,
+    public el: ElementRef
+  ) {
+    this.currentThread = new Thread();
+    this.currentUser = new User();
+    this.draftMessage = new Message();
 
-        this.messages = this.threadService.currentThreadMessages;
+    this.messages = this.threadService.currentThreadMessages;
 
-        this.threadService.currentThread.subscribe((thread:Thread) => {
-          this.currentThread = thread;
+    this.threadService.currentThread
+      .pipe(
+        tap(() => {
+          setTimeout(() => {
+            this.scrollToBottom();
+          });
+        })
+      )
+      .subscribe((thread: Thread) => {
+        this.currentThread = thread;
+      });
+
+    this.userService.currentUser.subscribe((user: User) => {
+      this.currentUser = user;
+    });
+
+    // this.messages.subscribe((message:Message) => {
+    //   setTimeout(() => {
+    //     this.scrollToBottom();
+    //   })
+    // })
+
+    // Scroll down when a new message arrives
+    this.messageService.newMessages
+      .pipe(
+        filter(
+          (message: Message) => message?.thread?.id === this.currentThread?.id
+        )
+      )
+      .subscribe((message: Message) => {
+        setTimeout(() => {
+          this.scrollToBottom();
         });
-
-        this.userService.currentUser.subscribe((user:User) => {
-          this.currentUser = user;
-        })
-
-        // this.messages.subscribe((message:Message) => {
-        //   setTimeout(() => {
-        //     this.scrollToBottom();
-        //   })
-        // })
-
-        this.messageService.newMessages.subscribe((message:Message) => {
-          if(message?.thread?.id === this.currentThread?.id){
-            setTimeout(() => {
-              this.scrollToBottom();
-            })
-          }
-        })
-
-      }
-
-  ngOnInit(): void {
+      });
   }
+
+  ngOnInit(): void {}
 
   onEnter(event: any): void {
     this.sendMessage();
@@ -75,5 +89,4 @@ export class ChatWindowComponent implements OnInit {
     );
     scrollPane.scrollTop = scrollPane.scrollHeight;
   }
-
 }
