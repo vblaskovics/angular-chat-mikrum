@@ -187,7 +187,7 @@ export class ChatExampleData {
     // order bot
     MessageService.messagesForThreadUser(tOrder, order).pipe(
       withLatestFrom(UnreadMessagesService.unreadMessagesCounter)
-    ).subscribe(([message, count]): void => {
+    ).forEach(([message, count]): void => {
       let msgTxt:string;
       if(message.text === 'olvasatlan'){
         msgTxt = count;

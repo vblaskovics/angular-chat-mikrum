@@ -1,6 +1,6 @@
-import { Component, ElementRef, OnInit } from '@angular/core';
-import { combineLatest, Observable } from 'rxjs';
-import { filter, tap } from 'rxjs/operators';
+import { Component, ElementRef, OnDestroy, OnInit } from '@angular/core';
+import { combineLatest, Observable, Subject } from 'rxjs';
+import { filter, takeUntil, tap } from 'rxjs/operators';
 import { Message } from '../message/message.model';
 import { MessageService } from '../message/message.service';
 import { Thread } from '../thread/thread.model';
@@ -13,11 +13,13 @@ import { UserService } from '../user/user.service';
   templateUrl: './chat-window.component.html',
   styleUrls: ['./chat-window.component.css'],
 })
-export class ChatWindowComponent implements OnInit {
+export class ChatWindowComponent implements OnInit, OnDestroy {
   messages: Observable<any>;
   currentThread: Thread;
   currentUser: User;
+
   draftMessage: Message;
+  unSubNotifier = new Subject(); 
 
   constructor(
     public messageService: MessageService,
@@ -33,6 +35,7 @@ export class ChatWindowComponent implements OnInit {
 
     this.threadService.currentThread
       .pipe(
+        takeUntil(this.unSubNotifier),
         tap(() => {
           setTimeout(() => {
             this.scrollToBottom();
@@ -43,7 +46,9 @@ export class ChatWindowComponent implements OnInit {
         this.currentThread = thread;
       });
 
-    this.userService.currentUser.subscribe((user: User) => {
+    this.userService.currentUser.pipe(
+      takeUntil(this.unSubNotifier),
+    ).subscribe((user: User) => {
       this.currentUser = user;
     });
 
@@ -68,6 +73,11 @@ export class ChatWindowComponent implements OnInit {
   }
 
   ngOnInit(): void {}
+  
+  ngOnDestroy(): void {
+    this.unSubNotifier.next();
+    this.unSubNotifier.complete();
+  }
 
   onEnter(event: any): void {
     this.sendMessage();
